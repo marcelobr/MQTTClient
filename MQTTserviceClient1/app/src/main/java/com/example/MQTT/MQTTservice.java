@@ -1,20 +1,10 @@
 package com.example.MQTT;
 
-import java.util.Iterator;
-import java.util.Vector;
-
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
 import android.app.Notification;
+import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.Notification.Builder;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -24,6 +14,16 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.util.Iterator;
+import java.util.Vector;
 
 public class MQTTservice extends Service {
 
@@ -220,8 +220,8 @@ public class MQTTservice extends Service {
 //			private MqttConnectOptions options = new MqttConnectOptions();
 //			private Vector<String> topics = new Vector<String>();
 			
-            private final String HOST = "10.2.0.9";
-            private final int PORT = 1883;
+            private final String HOST = BuildConfig.HOST;
+            private final int PORT = BuildConfig.PORT;
             private final String uri = "tcp://" + HOST + ":" + PORT;
             private final int MINTIMEOUT = 2000;
             private final int MAXTIMEOUT = 32000;

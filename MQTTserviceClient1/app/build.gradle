@@ -1,17 +1,33 @@
 apply plugin: 'com.android.application'
 
+def STRING = "String"
+def INTEGER = "int"
+def BOOLEAN = "boolean"
+
 android {
     compileSdkVersion 21
-    buildToolsVersion "23.0.0"
+    buildToolsVersion "23.0.2"
+
 
     defaultConfig {
         applicationId "com.example.MQTT"
         minSdkVersion 16
         targetSdkVersion 21
-    }
 
+        // If you have a dev/prod api url, you maybe need to set this in buildtypes
+        buildConfigField STRING, "HOST", '"10.2.0.9"'
+        buildConfigField INTEGER, "PORT", '1883'
+        buildConfigField STRING, "API_URL", '"http://10.2.0.9:8080/BeaconServlet"'
+    }
     buildTypes {
+        debug {
+            // Define the showing of Logcat Logs during App execution
+            buildConfigField BOOLEAN, "LOGS_ENABLED", "true"
+        }
         release {
+            // Define the showing of Logcat Logs during App execution
+            buildConfigField BOOLEAN, "LOGS_ENABLED", "false"
+
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
@@ -19,7 +35,19 @@ android {
 }
 
 dependencies {
+    // Compile all jar libraries in "app/libs/" folder
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'com.android.support:support-v4:21.0.3'
-    compile files('libs/org.eclipse.paho.client.mqttv3.jar')
+    compile 'com.android.support:cardview-v7:21.0.3'
+    compile 'com.android.support:recyclerview-v7:21.0.3'
+
+    // Web Services REST access (from Square)
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
+
+    // Http libraries (from Square) for integration with Retrofit
+    compile 'com.squareup.okio:okio:1.5.0'
+    compile 'com.squareup.okhttp:okhttp:2.4.0'
+    compile 'com.squareup.okhttp:okhttp-urlconnection:2.4.0'
 }

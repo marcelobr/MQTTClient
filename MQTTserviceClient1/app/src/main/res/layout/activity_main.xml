@@ -7,66 +7,63 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.MQTT.MainActivity" >
-
-    <EditText
-        android:id="@+id/editTextMessage"
+    tools:context=".MainActivity" >
+<!--
+    <TextView
+        android:id="@+id/topics_title"
+        android:text="@string/topics_title"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/buttonSubscribe"
-        android:layout_marginTop="18dp"
-        android:ems="10"
-        android:hint="Message"
-        android:width="175dp" />
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />
+-->
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/topics_list"
+        android:scrollbars="vertical"
+        android:drawSelectorOnTop="false"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"/>
 
-    <Button
-        android:id="@+id/buttonPublish"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/loading_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/editTextMessage"
-        android:layout_alignLeft="@+id/buttonSubscribe"
-        android:layout_alignParentRight="true"
-        android:text="Publish" />
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/buttonSubscribe"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/EditTextTopic"
-        android:layout_alignParentRight="true"
-        android:text="Subscribe" />
+        <ProgressBar
+            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
 
-    <EditText
-        android:id="@+id/EditTextTopic"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/editTextMessage"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="41dp"
-        android:ems="10"
-        android:hint="Topic"
-        android:width="175dp" >
+        <TextView
+            android:text="@string/loading_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@android:color/black"
+            android:textSize="20sp"
+            android:padding="16dp"/>
 
-        <requestFocus />
-    </EditText>
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
+        android:id="@+id/empty_message"
+        android:text="@string/empty_message"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/editTextMessage"
-        android:layout_below="@+id/editTextMessage"
-        android:layout_marginTop="39dp"
-        android:text="Status" />
-
-    <TextView
-        android:id="@+id/textResultStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/textView1"
-        android:layout_alignBottom="@+id/textView1"
-        android:layout_alignRight="@+id/buttonPublish"
-        android:layout_marginLeft="36dp"
-        android:layout_toRightOf="@+id/textView1" />
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:padding="16dp"
+        android:visibility="gone"/>
 
 </RelativeLayout>
