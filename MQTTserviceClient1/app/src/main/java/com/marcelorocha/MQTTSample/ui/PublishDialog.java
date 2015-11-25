@@ -58,19 +58,9 @@ public class PublishDialog implements TopicsAdapter.Callbacks {
     private DialogInterface.OnClickListener onActionSend = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
-            String message = edtMessage.getText().toString();
-
-            if (message.isEmpty()) {
-                Toast.makeText(context, R.string.no_topic_selected, Toast.LENGTH_LONG).show();
-                return; // Exits from this method.
-            }
-
-            if (chosenTopics.isEmpty()) {
-                Toast.makeText(context, R.string.no_topic_selected, Toast.LENGTH_LONG).show();
-                return; // Exits from this method.
-            }
-
-            callbacks.onSendMessage(message, chosenTopics);
+            // Do nothing here because we override this button later to change the close behaviour.
+            // However, we still need this because on older versions of Android unless we
+            // pass a handler the button doesn't get instantiated.
         }
     };
 
@@ -124,7 +114,32 @@ public class PublishDialog implements TopicsAdapter.Callbacks {
      */
     public void show() {
         alertDialog.show();
+        // Necessary workaround to prevent Dialog close when there is errors.
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(onPositiveButtonClick);
     }
+
+    /**
+     * Listener for override the Positive Button click.
+     */
+    private View.OnClickListener onPositiveButtonClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            String message = edtMessage.getText().toString();
+
+            if (message.isEmpty()) {
+                Toast.makeText(context, R.string.no_message, Toast.LENGTH_LONG).show();
+                return; // Exits from this method.
+            }
+
+            if (chosenTopics.isEmpty()) {
+                Toast.makeText(context, R.string.no_topic_selected, Toast.LENGTH_LONG).show();
+                return; // Exits from this method.
+            }
+
+            callbacks.onSendMessage(message, chosenTopics);
+            alertDialog.dismiss(); // close Dialog
+        }
+    };
 
     /**
      * The interface to listen the {@link PublishDialog} actions.

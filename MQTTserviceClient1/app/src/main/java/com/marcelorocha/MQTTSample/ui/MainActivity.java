@@ -284,9 +284,10 @@ public class MainActivity extends AppCompatActivity implements
             String action = "";
 
             switch (msg.what) {
-                case MQTTservice.SUBSCRIBE: action = "Subscribe"; break;
-                case MQTTservice.PUBLISH:	action = "Publish";   break;
-                case MQTTservice.REGISTER:	action = "Register";  break;
+                case MQTTservice.SUBSCRIBE: action = "Subscribe";     break;
+                case MQTTservice.UNSUBSCRIBE: action = "Unsubscribe"; break;
+                case MQTTservice.PUBLISH:	action = "Publish";       break;
+                case MQTTservice.REGISTER:	action = "Register";      break;
                 default:
                     super.handleMessage(msg);
                     return;

@@ -13,6 +13,7 @@
     <string name="empty_message">There is no Topics</string>
 
     <string name="message">Message</string>
+    <string name="no_message">Please, inform a message !!!</string>
     <string name="no_topic_selected">No Topics selected !!!</string>
 
     <string name="error_network">No connection found</string>
