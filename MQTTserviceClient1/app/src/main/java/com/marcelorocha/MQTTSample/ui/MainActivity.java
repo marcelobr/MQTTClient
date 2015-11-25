@@ -64,15 +64,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         setContentView(R.layout.activity_main);
 
         initViews();
-
-        serviceHandler = new Messenger(new ServiceHandler(mMainLayout));
-
-    	intentFilter = new IntentFilter();
-    	intentFilter.addAction(PUSH_RECEIVED_ACTION);
-    	pushReceiver = new PushReceiver();
-        registerReceiver(pushReceiver, intentFilter, null, null);
-
-        startService(new Intent(this, MQTTservice.class));
+        initMQQTService();
     }
 
     @Override
@@ -91,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
 	protected void onResume() {
 		super.onResume();
 		registerReceiver(pushReceiver, intentFilter);
+
         getTopicsOnServer();
 	}
 
@@ -99,6 +92,20 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
 		super.onPause();
 		unregisterReceiver(pushReceiver);
 	}
+
+    /**
+     * Perform MQTT Service initialization.
+     */
+    private void initMQQTService() {
+        serviceHandler = new Messenger(new ServiceHandler(mMainLayout));
+
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(PUSH_RECEIVED_ACTION);
+        pushReceiver = new PushReceiver();
+        registerReceiver(pushReceiver, intentFilter, null, null);
+
+        startService(new Intent(this, MQTTservice.class));
+    }
 
 	public class PushReceiver extends BroadcastReceiver {
 		@Override
@@ -158,16 +165,17 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         mLoadingView = findViewById(R.id.loading_layout);
         mEmptyView = findViewById(R.id.empty_message);
 
-        final RecyclerView mRecyclerView = (RecyclerView) findViewById(R.id.topics_list);
-        mAdapter = new TopicsAdapter();
-        mAdapter.setCallbacksImpl(this);
+        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.topics_list);
+        recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
 
         // Use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
+        recyclerView.setHasFixedSize(true);
 
         // Use a linear layout manager
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        mAdapter = new TopicsAdapter(this);
 
         // Configure a Adapter observer to be notified about data changes
         mAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
@@ -179,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         });
 
         // Set the Adapter
-        mRecyclerView.setAdapter(mAdapter);
+        recyclerView.setAdapter(mAdapter);
     }
 
     /**
@@ -195,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
     }
 
     @Override
-    public void onSubscribeTopic(final String topic) {
+    public void onTopicTurnedOn(final String topic) {
         Bundle data = new Bundle();
         data.putCharSequence(MQTTservice.TOPIC, topic);
         Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
@@ -207,6 +215,23 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
             Log.e("MQTTSample", e.getMessage());
             Snackbar
                 .make(mMainLayout, "Subscribe failed with exception:" + e.getMessage(), Snackbar.LENGTH_LONG)
+                .show();
+        }
+    }
+
+    @Override
+    public void onTopicTurnedOff(final String topic) {
+        Bundle data = new Bundle();
+        data.putCharSequence(MQTTservice.TOPIC, topic);
+        Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
+        msg.setData(data);
+        msg.replyTo = serviceHandler;
+        try {
+            service.send(msg);
+        } catch (RemoteException e) {
+            Log.e("MQTTSample", e.getMessage());
+            Snackbar
+                .make(mMainLayout, "Unsubscribe failed with exception:" + e.getMessage(), Snackbar.LENGTH_LONG)
                 .show();
         }
     }
@@ -276,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
             }
 	    }
 
-	}
+    }
 
     /**
      * Execute the GET Topics request.

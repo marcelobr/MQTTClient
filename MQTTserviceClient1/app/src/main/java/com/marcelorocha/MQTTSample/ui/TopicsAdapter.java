@@ -18,7 +18,10 @@ import java.util.List;
  */
 public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder> {
 
-    private static final String SUBSCRIBED = "SUBSCRIBED";
+    /**
+     * The Topics on Adapter.
+     */
+    private List<Topic> topics;
 
     /**
      * Represents an instance of {@link Callbacks}.
@@ -26,9 +29,12 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
     private Callbacks callbacks;
 
     /**
-     * The Topics on Adapter.
+     * Constructor.
+     * @param callbacksImpl An {@link Callbacks} instance.
      */
-    private List<Topic> topics;
+    public TopicsAdapter(final Callbacks callbacksImpl) {
+        this.callbacks = callbacksImpl;
+    }
 
     @Override
     public TopicsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -49,15 +55,16 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         final Topic topic = topics.get(position);
 
         //holder.itemThumb.setImageResource(thumb);
-        holder.topicSubscribed.setChecked(topic.isSubscribed());
+        holder.topicChoose.setChecked(topic.isSubscribed());
         holder.topicTitle.setText(topic.getTitle());
-        holder.topicMessage.setText(topic.isSubscribed() ? SUBSCRIBED : "");
 
-        holder.topicSubscribed.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        holder.topicChoose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    callbacks.onSubscribeTopic(topic.getTitle());
+                    callbacks.onTopicTurnedOn(topic.getTitle());
+                } else {
+                    callbacks.onTopicTurnedOff(topic.getTitle());
                 }
             }
         });
@@ -77,23 +84,14 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         notifyDataSetChanged();
     }
 
-    /**
-     * Set an {@link Callbacks} implementation on Adapter.
-     * @param callbacksImpl An {@link Callbacks} instance.
-     */
-    public void setCallbacksImpl(final Callbacks callbacksImpl) {
-        this.callbacks = callbacksImpl;
-    }
-
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         // public ImageView topicThumb;
-        public SwitchCompat topicSubscribed;
+        public SwitchCompat topicChoose;
         public TextView topicTitle;
-        public TextView topicMessage;
 
         /**
          * Constructor.
@@ -102,9 +100,8 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         public ViewHolder(View itemView) {
             super(itemView);
             //itemThumb = (ImageView) view.findViewById(R.id.item_thumb);
-            topicSubscribed = (SwitchCompat) itemView.findViewById(R.id.topic_subscribed);
+            topicChoose = (SwitchCompat) itemView.findViewById(R.id.topic_choose);
             topicTitle = (TextView) itemView.findViewById(R.id.topic_title);
-            topicMessage = (TextView) itemView.findViewById(R.id.topic_message);
         }
     }
 
@@ -114,10 +111,16 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
     public interface Callbacks {
 
         /**
-         * Called when user requests a topic subscribing.
-         * @param topic the topic to subscribe.
+         * Called when user turned on a Topic.
+         * @param topic the topic turned on.
          */
-        void onSubscribeTopic(String topic);
+        void onTopicTurnedOn(String topic);
+
+        /**
+         * Called when user turned off a Topic.
+         * @param topic the topic turned off.
+         */
+        void onTopicTurnedOff(String topic);
 
     }
 
