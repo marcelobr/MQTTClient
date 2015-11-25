@@ -1,7 +1,8 @@
-package com.example.MQTT.network;
+package com.marcelorocha.MQTTSample.network;
 
 import java.util.List;
 
+import retrofit.Callback;
 import retrofit.http.GET;
 
 /**
@@ -10,6 +11,6 @@ import retrofit.http.GET;
 public interface WebServices {
 
     @GET("/AllTopics")
-    List<String> getAllTopics();
+    void getAllTopics(Callback<List<String>> callback);
 
 }

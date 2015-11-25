@@ -1,4 +1,4 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample.network;
 
 import android.app.Notification;
 import android.app.Notification.Builder;
@@ -14,6 +14,9 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.marcelorocha.MQTTSample.BuildConfig;
+import com.marcelorocha.MQTTSample.R;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;

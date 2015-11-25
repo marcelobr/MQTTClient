@@ -1,4 +1,4 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample.ui;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -6,28 +6,43 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v7.app.ActionBarActivity;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.example.MQTT.network.WebServices;
+import com.marcelorocha.MQTTSample.MQTTClientApp;
+import com.marcelorocha.MQTTSample.R;
+import com.marcelorocha.MQTTSample.model.Topic;
+import com.marcelorocha.MQTTSample.network.MQTTservice;
+import com.marcelorocha.MQTTSample.network.WebServices;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends ActionBarActivity {
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
+public class MainActivity extends AppCompatActivity implements TopicsAdapter.Callbacks {
+
+    /**
+     * The Intent Filter action for the "PushReceiver" Broadcast Receiver.
+     */
+    private static final String PUSH_RECEIVED_ACTION = "com.marcelorocha.MQTTSample.PushReceived";
+
+    private View mMainLayout;
     private View mLoadingView;
     private View mEmptyView;
 
@@ -39,7 +54,7 @@ public class MainActivity extends ActionBarActivity {
     private List<Topic> topics = new ArrayList<>();
 
 	private Messenger service = null;
-	private final Messenger serviceHandler = new Messenger(new ServiceHandler());
+	private Messenger serviceHandler = null;
 	private IntentFilter intentFilter = null;
 	private PushReceiver pushReceiver;
 
@@ -49,13 +64,16 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-       
+
+        serviceHandler = new Messenger(new ServiceHandler(mMainLayout));
+
     	intentFilter = new IntentFilter();
-    	intentFilter.addAction("com.example.MQTT.PushReceived");
+    	intentFilter.addAction(PUSH_RECEIVED_ACTION);
     	pushReceiver = new PushReceiver();
         registerReceiver(pushReceiver, intentFilter, null, null);
 
-        startService(new Intent(this, MQTTservice.class));	
+        startService(new Intent(this, MQTTservice.class));
+
 		addSubscribeButtonListener();
 		addPublishButtonListener();
     }
@@ -76,9 +94,7 @@ public class MainActivity extends ActionBarActivity {
 	protected void onResume() {
 		super.onResume();
 		registerReceiver(pushReceiver, intentFilter);
-
-        // Get topics on server...
-        (new GetAllTopics()).execute();
+        getTopicsOnServer();
 	}
 
 	@Override
@@ -121,7 +137,7 @@ public class MainActivity extends ActionBarActivity {
 			service = new Messenger(binder);
 			Bundle data = new Bundle();
 			//data.putSerializable(MQTTservice.CLASSNAME, MainActivity.class);
-			data.putCharSequence(MQTTservice.INTENTNAME, "com.example.MQTT.PushReceived");
+			data.putCharSequence(MQTTservice.INTENTNAME, PUSH_RECEIVED_ACTION);
 			Message msg = Message.obtain(null, MQTTservice.REGISTER);
 			msg.setData(data);
 			msg.replyTo = serviceHandler;
@@ -141,11 +157,13 @@ public class MainActivity extends ActionBarActivity {
      * Initialize and setup the views of Activity.
      */
     private void initViews() {
+        mMainLayout = findViewById(R.id.main_layout);
         mLoadingView = findViewById(R.id.loading_layout);
         mEmptyView = findViewById(R.id.empty_message);
 
         final RecyclerView mRecyclerView = (RecyclerView) findViewById(R.id.topics_list);
         mAdapter = new TopicsAdapter();
+        mAdapter.setCallbacksImpl(this);
 
         // Use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -176,6 +194,23 @@ public class MainActivity extends ActionBarActivity {
             mLoadingView.setVisibility(View.GONE);
         } else {
             mEmptyView.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onSubscribeTopic(final String topic) {
+        Bundle data = new Bundle();
+        data.putCharSequence(MQTTservice.TOPIC, topic);
+        Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
+        msg.setData(data);
+        msg.replyTo = serviceHandler;
+        try {
+            service.send(msg);
+        } catch (RemoteException e) {
+            Log.e("MQTTSample", e.getMessage());
+            Snackbar
+                .make(mMainLayout, "Subscribe failed with exception:" + e.getMessage(), Snackbar.LENGTH_LONG)
+                .show();
         }
     }
 
@@ -245,7 +280,13 @@ public class MainActivity extends ActionBarActivity {
 //		});
 	}
 
-	class ServiceHandler extends Handler {
+	static class ServiceHandler extends Handler {
+
+        private View view;
+
+        public ServiceHandler(View view) {
+            this.view = view;
+        }
 
 	    @Override
 	    public void handleMessage(Message msg) {
@@ -257,38 +298,43 @@ public class MainActivity extends ActionBarActivity {
                      super.handleMessage(msg);
                      return;
              }
-	   	 
+
 	  		 Bundle b = msg.getData();
 	  		 if (b != null) {
-	  			 //TextView result = (TextView) findViewById(R.id.textResultStatus);
-	  			 //Boolean status = b.getBoolean(MQTTservice.STATUS);
-                 //result.setText(!status ? "Fail" : "Success");
+	  			 Boolean status = b.getBoolean(MQTTservice.STATUS);
+                 Snackbar
+                     .make(view, !status ? "Fail" : "Success", Snackbar.LENGTH_LONG)
+                     .show();
 	  		 }
 	    }
 
 	}
 
     /**
+     * Execute the GET Topics request.
+     */
+    private void getTopicsOnServer() {
+        // 1. Show loader if necessary
+        mEmptyView.setVisibility(View.GONE);
+
+        if (topics.isEmpty()) {
+            mLoadingView.setVisibility(View.VISIBLE);
+        }
+
+        // 2. Execute the request
+        final WebServices webServices = MQTTClientApp.getWebServices();
+        webServices.getAllTopics(new GetAllTopicsResponse());
+    }
+
+    /**
      * Task for get all Topics from Server.
      */
-    class GetAllTopics extends AsyncTask<Void, Void , List<String>> {
+    private class GetAllTopicsResponse implements Callback<List<String>> {
 
         @Override
-        protected void onPreExecute() {
-            if (topics.isEmpty()) {
-                mLoadingView.setVisibility(View.VISIBLE);
-            }
-        }
-
-        @Override
-        protected List<String> doInBackground(Void... params) {
-            final WebServices webServices = MQTTClientApp.getWebServices();
-            return webServices.getAllTopics();
-        }
-
-        @Override
-        protected void onPostExecute(List<String> result) {
+        public void success(List<String> result, Response response) {
             // Update list of topics
+            topics.clear();
             for (int pos = 0; pos < result.size(); pos++) {
                 Topic topic = new Topic();
                 topic.setTitle(result.get(pos));
@@ -297,6 +343,17 @@ public class MainActivity extends ActionBarActivity {
                     topics.add(pos, topic);
                 }
             }
+
+            mAdapter.loadTopics(topics);
+            mLoadingView.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void failure(RetrofitError error) {
+            Snackbar
+                .make(mMainLayout, error.getLocalizedMessage(), Snackbar.LENGTH_LONG)
+              //.setAction(R.string.snackbar_action, myOnClickListener)
+                .show();
 
             mAdapter.loadTopics(topics);
             mLoadingView.setVisibility(View.GONE);

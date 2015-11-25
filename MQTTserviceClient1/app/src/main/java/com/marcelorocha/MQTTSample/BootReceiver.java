@@ -1,9 +1,11 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+
+import com.marcelorocha.MQTTSample.network.MQTTservice;
 
 public class BootReceiver extends BroadcastReceiver {
 

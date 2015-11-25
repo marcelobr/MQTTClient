@@ -1,11 +1,10 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample;
 
 import android.app.Application;
+import android.content.Context;
 
-import com.example.MQTT.network.ServiceGenerator;
-import com.example.MQTT.network.WebServices;
-
-import retrofit.RestAdapter;
+import com.marcelorocha.MQTTSample.network.ServiceGenerator;
+import com.marcelorocha.MQTTSample.network.WebServices;
 
 /**
  * The Application class of App.
@@ -17,9 +16,18 @@ public class MQTTClientApp extends Application {
      */
     private static WebServices webServices;
 
+    /**
+     *
+     */
+    private static MQTTClientApp appInstance;
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // Get the Application Instance
+        appInstance = this;
+
         // Perform Services initialization
         initServices();
     }
@@ -30,6 +38,14 @@ public class MQTTClientApp extends Application {
     private void initServices() {
         // Create an instance of WebServices.
         webServices = ServiceGenerator.createService(WebServices.class);
+    }
+
+    /**
+     * Get the Application context.
+     * @return the Application context.
+     */
+    public static Context getContext() {
+        return appInstance.getApplicationContext();
     }
 
     /**

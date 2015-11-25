@@ -1,4 +1,4 @@
-package com.example.MQTT.network;
+package com.marcelorocha.MQTTSample.network;
 
 /**
  * Represents the response body data of the Get AllTopics request.

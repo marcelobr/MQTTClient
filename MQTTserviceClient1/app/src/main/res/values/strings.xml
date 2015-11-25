@@ -10,4 +10,9 @@
     <string name="loading_message">Loading Topics&#8230;</string>
     <string name="empty_message">There is no Topics</string>
 
+    <string name="error_network">No connection found</string>
+    <string name="error_no_response">Server return with no response</string>
+    <string name="error_network_http_error">Server return with http code %1$d</string>
+    <string name="error_unknown">Unknown error</string>
+
 </resources>

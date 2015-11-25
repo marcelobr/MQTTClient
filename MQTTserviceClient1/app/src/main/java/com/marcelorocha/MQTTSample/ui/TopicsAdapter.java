@@ -1,11 +1,15 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample.ui;
 
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SwitchCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.TextView;
+
+import com.marcelorocha.MQTTSample.R;
+import com.marcelorocha.MQTTSample.model.Topic;
 
 import java.util.List;
 
@@ -17,9 +21,9 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
     private static final String SUBSCRIBED = "SUBSCRIBED";
 
     /**
-     * Represents an instance of {@link TopicsListItemListener}.
+     * Represents an instance of {@link Callbacks}.
      */
-    private TopicsListItemListener listener;
+    private Callbacks callbacks;
 
     /**
      * The Topics on Adapter.
@@ -33,8 +37,7 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
                 .inflate(R.layout.topic_list_item, parent, false);
         // set the view's size, margins, paddings and layout parameters
         // ...
-        ViewHolder vh = new ViewHolder(v, listener);
-        return vh;
+        return new ViewHolder(v);
     }
 
     @Override
@@ -49,6 +52,15 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         holder.topicSubscribed.setChecked(topic.isSubscribed());
         holder.topicTitle.setText(topic.getTitle());
         holder.topicMessage.setText(topic.isSubscribed() ? SUBSCRIBED : "");
+
+        holder.topicSubscribed.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    callbacks.onSubscribeTopic(topic.getTitle());
+                }
+            }
+        });
     }
 
     @Override
@@ -66,18 +78,17 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
     }
 
     /**
-     * Set a listener instance on Adapter.
-     * @param listener A {@link TopicsListItemListener} instance.
+     * Set an {@link Callbacks} implementation on Adapter.
+     * @param callbacksImpl An {@link Callbacks} instance.
      */
-    public void setTopicListItemListener(final TopicsListItemListener listener) {
-        this.listener = listener;
+    public void setCallbacksImpl(final Callbacks callbacksImpl) {
+        this.callbacks = callbacksImpl;
     }
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    static class ViewHolder extends RecyclerView.ViewHolder /*implements
-            View.OnClickListener, View.OnLongClickListener*/ {
+    static class ViewHolder extends RecyclerView.ViewHolder {
 
         // public ImageView topicThumb;
         public SwitchCompat topicSubscribed;
@@ -85,37 +96,28 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         public TextView topicMessage;
 
         /**
-         * The listener for Topics List item actions.
-         */
-        private TopicsListItemListener itemListener;
-
-        /**
          * Constructor.
          * @param itemView the View to inflate.
-         * @param itemListener The listener for Topics List item actions.
          */
-        public ViewHolder(View itemView, TopicsListItemListener itemListener) {
+        public ViewHolder(View itemView) {
             super(itemView);
             //itemThumb = (ImageView) view.findViewById(R.id.item_thumb);
             topicSubscribed = (SwitchCompat) itemView.findViewById(R.id.topic_subscribed);
             topicTitle = (TextView) itemView.findViewById(R.id.topic_title);
             topicMessage = (TextView) itemView.findViewById(R.id.topic_message);
-
-            this.itemListener = itemListener;
         }
-
     }
 
     /**
      * The interface to listen the Topics list item actions.
      */
-    public interface TopicsListItemListener {
+    public interface Callbacks {
 
         /**
          * Called when user requests a topic subscribing.
          * @param topic the topic to subscribe.
          */
-        void onRequestTopicSubscribe(String topic);
+        void onSubscribeTopic(String topic);
 
     }
 

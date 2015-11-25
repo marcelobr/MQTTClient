@@ -1,4 +1,4 @@
-package com.example.MQTT;
+package com.marcelorocha.MQTTSample.model;
 
 /**
  * Model class to represent a Topic.
