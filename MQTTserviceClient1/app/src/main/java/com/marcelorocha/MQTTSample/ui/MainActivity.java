@@ -73,9 +73,6 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         registerReceiver(pushReceiver, intentFilter, null, null);
 
         startService(new Intent(this, MQTTservice.class));
-
-		addSubscribeButtonListener();
-		addPublishButtonListener();
     }
 
     @Override
@@ -214,37 +211,6 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         }
     }
 
-    private void addSubscribeButtonListener() {
-//	    Button subscribeButton = (Button) findViewById(R.id.buttonSubscribe);
-//	    subscribeButton.setOnClickListener(new OnClickListener() {
-//	    	InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-//	    	@Override
-//			public void onClick(View arg0) {
-//	    		TextView result = (TextView) findViewById(R.id.textResultStatus);
-//	    		EditText t = (EditText) findViewById(R.id.EditTextTopic);
-//	    		String topic = t.getText().toString().trim();
-//	    		inputMethodManager.hideSoftInputFromWindow(result.getWindowToken(), 0);
-//
-//	    		if (topic != null && !topic.isEmpty()) {
-//	    			result.setText("");
-//	    			Bundle data = new Bundle();
-//	    			data.putCharSequence(MQTTservice.TOPIC, topic);
-//	    			Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
-//	    			msg.setData(data);
-//	    			msg.replyTo = serviceHandler;
-//	    			try {
-//	    				service.send(msg);
-//	    			} catch (RemoteException e) {
-//	    				e.printStackTrace();
-//	    				result.setText("Subscribe failed with exception:" + e.getMessage());
-//	    			}
-//	    		} else {
-//	    			result.setText("Topic required.");
-//	    		}
-//			}
-//		});
-	}
-
 	private void addPublishButtonListener() {
 //	    Button publishButton = (Button) findViewById(R.id.buttonPublish);
 //	    publishButton.setOnClickListener(new OnClickListener() {
@@ -290,22 +256,24 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
 
 	    @Override
 	    public void handleMessage(Message msg) {
-		   	 switch (msg.what) {
-                 case MQTTservice.SUBSCRIBE: break;
-                 case MQTTservice.PUBLISH:	 break;
-                 case MQTTservice.REGISTER:	 break;
-                 default:
-                     super.handleMessage(msg);
-                     return;
-             }
+            String action = "";
 
-	  		 Bundle b = msg.getData();
-	  		 if (b != null) {
-	  			 Boolean status = b.getBoolean(MQTTservice.STATUS);
-                 Snackbar
-                     .make(view, !status ? "Fail" : "Success", Snackbar.LENGTH_LONG)
-                     .show();
-	  		 }
+            switch (msg.what) {
+                case MQTTservice.SUBSCRIBE: action = "Subscribe"; break;
+                case MQTTservice.PUBLISH:	action = "Publish";   break;
+                case MQTTservice.REGISTER:	action = "Register";  break;
+                default:
+                    super.handleMessage(msg);
+                    return;
+            }
+
+            Bundle b = msg.getData();
+            if (b != null) {
+                Boolean status = b.getBoolean(MQTTservice.STATUS);
+                Snackbar
+                    .make(view, action + (!status ? " fail" : " success"), Snackbar.LENGTH_LONG)
+                    .show();
+            }
 	    }
 
 	}
