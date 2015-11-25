@@ -62,9 +62,9 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    callbacks.onTopicTurnedOn(topic.getTitle());
+                    callbacks.onTopicTurnedOn(topic);
                 } else {
-                    callbacks.onTopicTurnedOff(topic.getTitle());
+                    callbacks.onTopicTurnedOff(topic);
                 }
             }
         });
@@ -114,13 +114,13 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
          * Called when user turned on a Topic.
          * @param topic the topic turned on.
          */
-        void onTopicTurnedOn(String topic);
+        void onTopicTurnedOn(Topic topic);
 
         /**
          * Called when user turned off a Topic.
          * @param topic the topic turned off.
          */
-        void onTopicTurnedOff(String topic);
+        void onTopicTurnedOff(Topic topic);
 
     }
 

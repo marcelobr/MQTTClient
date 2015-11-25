@@ -35,7 +35,8 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-public class MainActivity extends AppCompatActivity implements TopicsAdapter.Callbacks {
+public class MainActivity extends AppCompatActivity implements
+        TopicsAdapter.Callbacks, PublishDialog.Callbacks {
 
     /**
      * The Intent Filter action for the "PushReceiver" Broadcast Receiver.
@@ -130,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_publish) {
+            showPublishDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -203,9 +205,9 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
     }
 
     @Override
-    public void onTopicTurnedOn(final String topic) {
+    public void onTopicTurnedOn(final Topic topic) {
         Bundle data = new Bundle();
-        data.putCharSequence(MQTTservice.TOPIC, topic);
+        data.putCharSequence(MQTTservice.TOPIC, topic.getTitle());
         Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
         msg.setData(data);
         msg.replyTo = serviceHandler;
@@ -220,10 +222,10 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
     }
 
     @Override
-    public void onTopicTurnedOff(final String topic) {
+    public void onTopicTurnedOff(final Topic topic) {
         Bundle data = new Bundle();
-        data.putCharSequence(MQTTservice.TOPIC, topic);
-        Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE);
+        data.putCharSequence(MQTTservice.TOPIC, topic.getTitle());
+        Message msg = Message.obtain(null, MQTTservice.UNSUBSCRIBE);
         msg.setData(data);
         msg.replyTo = serviceHandler;
         try {
@@ -236,40 +238,38 @@ public class MainActivity extends AppCompatActivity implements TopicsAdapter.Cal
         }
     }
 
-	private void addPublishButtonListener() {
-//	    Button publishButton = (Button) findViewById(R.id.buttonPublish);
-//	    publishButton.setOnClickListener(new OnClickListener() {
-//	    	InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-//	    	@Override
-//			public void onClick(View arg0) {
-//	    		EditText t = (EditText) findViewById(R.id.EditTextTopic);
-//	    		EditText m = (EditText) findViewById(R.id.editTextMessage);
-//	    		TextView result = (TextView) findViewById(R.id.textResultStatus);
-//	    		inputMethodManager.hideSoftInputFromWindow(result.getWindowToken(), 0);
-//
-//	    		String topic = t.getText().toString().trim();
-//	    		String message = m.getText().toString().trim();
-//
-//	    		if (topic != null && !topic.isEmpty() && message != null && !message.isEmpty()) {
-//	    			result.setText("");
-//	    			Bundle data = new Bundle();
-//	    			data.putCharSequence(MQTTservice.TOPIC, topic);
-//	    			data.putCharSequence(MQTTservice.MESSAGE, message);
-//	    			Message msg = Message.obtain(null, MQTTservice.PUBLISH);
-//	    			msg.setData(data);
-//	    			msg.replyTo = serviceHandler;
-//	    			try {
-//	    				service.send(msg);
-//	    			} catch (RemoteException e) {
-//	    				e.printStackTrace();
-//	    				result.setText("Publish failed with exception:" + e.getMessage());
-//	    			}
-//	    		} else {
-//	    			result.setText("Topic and message required.");
-//	    		}
-//			}
-//		});
+    /**
+     * Show the Publish dialog on screen.
+     */
+	private void showPublishDialog() {
+        PublishDialog dialog = new PublishDialog(this, topics, this);
+        dialog.show();
 	}
+
+    @Override
+    public void onSendMessage(String message, List<Topic> topics) {
+        // Publish topic by topic
+        for (Topic topic : topics) {
+            Bundle data = new Bundle();
+            data.putCharSequence(MQTTservice.TOPIC, topic.getTitle());
+            data.putCharSequence(MQTTservice.MESSAGE, message);
+            Message msg = Message.obtain(null, MQTTservice.PUBLISH);
+            msg.setData(data);
+            msg.replyTo = serviceHandler;
+            try {
+                service.send(msg);
+            } catch (RemoteException e) {
+                Log.e("MQTTSample", e.getMessage());
+
+                String errorMessage = String.format("Publishing on topic \"%s\" failed " +
+                        "with exception: %s", topic,e.getMessage());
+
+                Snackbar
+                    .make(mMainLayout, errorMessage, Snackbar.LENGTH_LONG)
+                    .show();
+            }
+        }
+    }
 
 	static class ServiceHandler extends Handler {
 

@@ -88,7 +88,8 @@ public class MQTTservice extends Service {
 	 public static final int REGISTER = 0;
 	 public static final int SUBSCRIBE = 1;
 	 public static final int PUBLISH = 2;
-	 
+     public static final int UNSUBSCRIBE = -1;
+
 	 /*
 	  * Fixed strings for the supported messages.
 	  */
@@ -109,6 +110,7 @@ public class MQTTservice extends Service {
 
         	 switch (msg.what) {
                  case SUBSCRIBE:
+                 case UNSUBSCRIBE:
                  case PUBLISH:
                         /*
                          * These two requests should be handled by
@@ -322,6 +324,29 @@ public class MQTTservice extends Service {
                         ReplytoClient(msg.replyTo, msg.what, status);
                         break;
                     }
+                    case UNSUBSCRIBE:
+                    {
+                        boolean status = false;
+                        Bundle b = msg.getData();
+                        if (b != null) {
+                            CharSequence cs = b.getCharSequence(TOPIC);
+                            if (cs != null) {
+                                String topic = cs.toString().trim();
+                                if (topic.isEmpty() == false) {
+                                    status = unsubscribe(topic);
+                                    /*
+                                     * Save this topic for re-subscription if needed.
+                                     */
+                                    if (status)
+                                    {
+                                        topics.remove(topic);
+                                    }
+                                }
+                            }
+                        }
+                        ReplytoClient(msg.replyTo, msg.what, status);
+                        break;
+                    }
                     case PUBLISH:
                     {
                         boolean status = false;
@@ -356,6 +381,16 @@ public class MQTTservice extends Service {
 				}
 				return true;
 			}
+
+            private boolean unsubscribe(String topic) {
+                try {
+                    client.unsubscribe(topic);
+                } catch (MqttException e) {
+                    Log.d(getClass().getCanonicalName(), "Unsubscribe failed with reason code = " + e.getReasonCode());
+                    return false;
+                }
+                return true;
+            }
 
 			private boolean publish(String topic, String msg) {
 				try {
