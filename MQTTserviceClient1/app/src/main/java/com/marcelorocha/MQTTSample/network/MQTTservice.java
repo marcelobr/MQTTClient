@@ -99,7 +99,7 @@ public class MQTTservice extends Service {
 	 public static final String STATUS = "status";
 	 public static final String CLASSNAME = "classname";
 	 public static final String INTENTNAME = "intentname";
-    public static final String CLIENTID = "clientid";
+     public static final String CLIENTID = "clientid";
 	 
 	 /*
 	  * This class handles messages sent to the service by
@@ -145,6 +145,17 @@ public class MQTTservice extends Service {
                                  status = true;
                              }
                          }
+
+                         // Subscribe the own device Topic
+                         String deviceMacAddress = DeviceUtil.getMacAddress();
+                         String clientId = deviceMacAddress.replace(":", "");
+
+                         Bundle data = new Bundle();
+                         data.putCharSequence(MQTTservice.TOPIC, clientId);
+                         Message msgToSend = Message.obtain(null, MQTTservice.SUBSCRIBE);
+                         msgToSend.setData(data);
+
+                         connection.makeRequest(msgToSend);
                      }
                      ReplytoClient(msg.replyTo, msg.what, status);
                      break;
