@@ -27,6 +27,7 @@ import com.marcelorocha.MQTTSample.R;
 import com.marcelorocha.MQTTSample.model.Topic;
 import com.marcelorocha.MQTTSample.network.MQTTservice;
 import com.marcelorocha.MQTTSample.network.WebServices;
+import com.marcelorocha.MQTTSample.util.DeviceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -281,26 +282,68 @@ public class MainActivity extends AppCompatActivity implements
 
 	    @Override
 	    public void handleMessage(Message msg) {
-            String action = "";
-
-            switch (msg.what) {
-                case MQTTservice.SUBSCRIBE: action = "Subscribe";     break;
-                case MQTTservice.UNSUBSCRIBE: action = "Unsubscribe"; break;
-                case MQTTservice.PUBLISH:	action = "Publish";       break;
-                case MQTTservice.REGISTER:	action = "Register";      break;
-                default:
-                    super.handleMessage(msg);
-                    return;
-            }
-
             Bundle b = msg.getData();
             if (b != null) {
-                Boolean status = b.getBoolean(MQTTservice.STATUS);
+                Boolean result = b.getBoolean(MQTTservice.STATUS);
+                final WebServices webServices = MQTTClientApp.getWebServices();
+
+                String action = "";
+                String clientId = null;
+                String topic = null;
+
+                switch (msg.what) {
+                    case MQTTservice.SUBSCRIBE:
+                        action = "Subscribe";
+                        if (result) {
+                            clientId = b.getString(MQTTservice.CLIENTID);
+                            topic = b.getString(MQTTservice.TOPIC);
+                            webServices.sendSubscribe(clientId, topic, new WebServiceResponse(action));
+                        }
+                        break;
+                    case MQTTservice.UNSUBSCRIBE:
+                        action = "Unsubscribe";
+                        if (result) {
+                            clientId = b.getString(MQTTservice.CLIENTID);
+                            topic = b.getString(MQTTservice.TOPIC);
+                            webServices.sendUnSubscribe(clientId, topic, new WebServiceResponse(action));
+                        }
+                        break;
+                    case MQTTservice.PUBLISH:  action = "Publish";  break;
+                    case MQTTservice.REGISTER: action = "Register"; break;
+                    default:
+                        super.handleMessage(msg);
+                        return;
+                }
+
                 Snackbar
-                    .make(view, action + (!status ? " fail" : " success"), Snackbar.LENGTH_LONG)
+                    .make(view, action + (!result ? " fail" : " success"), Snackbar.LENGTH_LONG)
                     .show();
             }
 	    }
+
+        /**
+         * Response callback for Subscribe/Unsubscribe requests.
+         */
+        private class WebServiceResponse implements retrofit.Callback<Void> {
+
+            private String action;
+
+            public WebServiceResponse(String action) {
+                this.action = action;
+            }
+
+            @Override
+            public void success(Void result, Response response) {
+                Log.i(WebServiceResponse.class.getSimpleName(), action + " success !!!");
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                Log.i(WebServiceResponse.class.getSimpleName(),
+                        action + "failure !!!, reason = " + error.getLocalizedMessage());
+            }
+
+        }
 
     }
 
@@ -317,26 +360,22 @@ public class MainActivity extends AppCompatActivity implements
 
         // 2. Execute the request
         final WebServices webServices = MQTTClientApp.getWebServices();
-        webServices.getAllTopics(new GetAllTopicsResponse());
+
+        String deviceMacAddress = DeviceUtil.getMacAddress();
+        String clientId = deviceMacAddress.replace(":", "");
+
+        webServices.getTopics(clientId, new GetTopicsResponse());
     }
 
     /**
-     * Task for get all Topics from Server.
+     * Response callback for GET Topics request.
      */
-    private class GetAllTopicsResponse implements Callback<List<String>> {
+    private class GetTopicsResponse implements Callback<List<Topic>> {
 
         @Override
-        public void success(List<String> result, Response response) {
+        public void success(List<Topic> result, Response response) {
             // Update list of topics
-            topics.clear();
-            for (int pos = 0; pos < result.size(); pos++) {
-                Topic topic = new Topic();
-                topic.setTitle(result.get(pos));
-
-                if (!topics.contains(topic)) {
-                    topics.add(pos, topic);
-                }
-            }
+            topics = result;
 
             mAdapter.loadTopics(topics);
             mLoadingView.setVisibility(View.GONE);

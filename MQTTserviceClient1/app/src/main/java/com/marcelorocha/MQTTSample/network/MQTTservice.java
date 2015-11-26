@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.marcelorocha.MQTTSample.BuildConfig;
 import com.marcelorocha.MQTTSample.R;
+import com.marcelorocha.MQTTSample.util.DeviceUtil;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -98,6 +99,7 @@ public class MQTTservice extends Service {
 	 public static final String STATUS = "status";
 	 public static final String CLASSNAME = "classname";
 	 public static final String INTENTNAME = "intentname";
+    public static final String CLIENTID = "clientid";
 	 
 	 /*
 	  * This class handles messages sent to the service by
@@ -152,13 +154,17 @@ public class MQTTservice extends Service {
      }
 
     private void ReplytoClient(Messenger responseMessenger, int type, boolean status) {
+		ReplytoClient(responseMessenger, type, status, null);
+    }
+
+    private void ReplytoClient(Messenger responseMessenger, int type, boolean status, Bundle data) {
 		/*
 		 * A response can be sent back to a requester when
 		 * the replyTo field is set in a Message, passed to this
 		 * method as the first parameter.
 		 */
-		if (responseMessenger != null) {
-            Bundle data = new Bundle();
+        if (responseMessenger != null) {
+            if (data == null) data = new Bundle();
             data.putBoolean(STATUS, status);
             Message reply = Message.obtain(null, type);
             reply.setData(data);
@@ -216,14 +222,7 @@ public class MQTTservice extends Service {
 		private class MsgHandler extends Handler implements MqttCallback {
 
 //			private final String HOST = "iot.eclipse.org";
-//		    private final int PORT = 1883;  
-//		    private final String uri = "tcp://" + HOST + ":" + PORT;
-//			private final int MINTIMEOUT = 2000;
-//			private final int MAXTIMEOUT = 32000;
-//			private int timeout = MINTIMEOUT;
-//			private MqttClient client = null;
-//			private MqttConnectOptions options = new MqttConnectOptions();
-//			private Vector<String> topics = new Vector<String>();
+//		    private final int PORT = 1883;
 			
             private final String HOST = BuildConfig.HOST;
             private final int PORT = BuildConfig.PORT;
@@ -234,13 +233,17 @@ public class MQTTservice extends Service {
             private MqttClient client = null;
             private MqttConnectOptions options = new MqttConnectOptions();
             private Vector<String> topics = new Vector<String>();
+            private String clientId = null;
 
 			MsgHandler() {
 				//options.setCleanSession(true);
 				options.setCleanSession(false);
 			    try {
 					//client = new MqttClient(uri, MqttClient.generateClientId(), null);
-					client = new MqttClient(uri, "Nexus5", null);
+                    String deviceMacAddress = DeviceUtil.getMacAddress();
+                    clientId = deviceMacAddress.replace(":", "");
+
+					client = new MqttClient(uri, clientId, null);
 					client.setCallback(this);
 				} catch (MqttException e1) {
 					// TODO Auto-generated catch block
@@ -305,10 +308,11 @@ public class MQTTservice extends Service {
                     {
                         boolean status = false;
                         Bundle b = msg.getData();
+                        String topic = null;
                         if (b != null) {
                             CharSequence cs = b.getCharSequence(TOPIC);
                             if (cs != null) {
-                                String topic = cs.toString().trim();
+                                topic = cs.toString().trim();
                                 if (topic.isEmpty() == false) {
                                     status = subscribe(topic);
                                     /*
@@ -321,17 +325,21 @@ public class MQTTservice extends Service {
                                 }
                             }
                         }
-                        ReplytoClient(msg.replyTo, msg.what, status);
+                        Bundle dataToSend = new Bundle();
+                        dataToSend.putString(CLIENTID, clientId);
+                        dataToSend.putString(TOPIC, topic);
+                        ReplytoClient(msg.replyTo, msg.what, status, dataToSend);
                         break;
                     }
                     case UNSUBSCRIBE:
                     {
                         boolean status = false;
                         Bundle b = msg.getData();
+                        String topic = null;
                         if (b != null) {
                             CharSequence cs = b.getCharSequence(TOPIC);
                             if (cs != null) {
-                                String topic = cs.toString().trim();
+                                topic = cs.toString().trim();
                                 if (topic.isEmpty() == false) {
                                     status = unsubscribe(topic);
                                     /*
@@ -344,7 +352,10 @@ public class MQTTservice extends Service {
                                 }
                             }
                         }
-                        ReplytoClient(msg.replyTo, msg.what, status);
+                        Bundle dataToSend = new Bundle();
+                        dataToSend.putString(CLIENTID, clientId);
+                        dataToSend.putString(TOPIC, topic);
+                        ReplytoClient(msg.replyTo, msg.what, status, dataToSend);
                         break;
                     }
                     case PUBLISH:
