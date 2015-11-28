@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,6 +31,7 @@ import com.marcelorocha.MQTTSample.network.WebServices;
 import com.marcelorocha.MQTTSample.util.DeviceUtil;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import retrofit.Callback;
@@ -85,7 +87,6 @@ public class MainActivity extends AppCompatActivity implements
 	protected void onResume() {
 		super.onResume();
 		registerReceiver(pushReceiver, intentFilter);
-
         getTopicsOnServer();
 	}
 
@@ -132,7 +133,8 @@ public class MainActivity extends AppCompatActivity implements
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_publish) {
-            showPublishDialog();
+            //showPublishDialog();
+            //startActivity(new Intent(this, NotificationsActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -144,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements
 			service = new Messenger(binder);
 			Bundle data = new Bundle();
 			//data.putSerializable(MQTTservice.CLASSNAME, MainActivity.class);
-			data.putCharSequence(MQTTservice.INTENTNAME, PUSH_RECEIVED_ACTION);
+			data.putCharSequence(MQTTservice.INTENT_NAME, PUSH_RECEIVED_ACTION);
 			Message msg = Message.obtain(null, MQTTservice.REGISTER);
 			msg.setData(data);
 			msg.replyTo = serviceHandler;
@@ -272,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-	static class ServiceHandler extends Handler {
+	class ServiceHandler extends Handler {
 
         private View view;
 
@@ -289,27 +291,87 @@ public class MainActivity extends AppCompatActivity implements
 
                 String action = "";
                 String clientId = null;
-                String topic = null;
+                String topicTitle = null;
+                Topic topic = null;
+                int topicPos = 0;
+                Topic topicInList = null;
 
                 switch (msg.what) {
                     case MQTTservice.SUBSCRIBE:
                         action = "Subscribe";
                         if (result) {
-                            clientId = b.getString(MQTTservice.CLIENTID);
-                            topic = b.getString(MQTTservice.TOPIC);
-                            webServices.sendSubscribe(clientId, topic, new WebServiceResponse(action));
+                            clientId = b.getString(MQTTservice.CLIENT_ID);
+                            topicTitle = b.getString(MQTTservice.TOPIC);
+                            topic = new Topic();
+                            topic.setTitle(topicTitle);
+
+                            topicPos = topics.indexOf(topic);
+                            topicInList = topics.get(topicPos);
+
+                            if (topicInList.isSubscribed()) {
+                                return; // Topic is already subscribed on Server
+                            }
+
+                            // Update topic on service
+                            webServices.sendSubscribe(clientId, topicTitle, new WebServiceResponse(action));
+
+                            // Update topics list
+                            topic.setSubscribed(true);
+                            topics.set(topicPos, topic);
                         }
                         break;
                     case MQTTservice.UNSUBSCRIBE:
                         action = "Unsubscribe";
                         if (result) {
-                            clientId = b.getString(MQTTservice.CLIENTID);
-                            topic = b.getString(MQTTservice.TOPIC);
-                            webServices.sendUnSubscribe(clientId, topic, new WebServiceResponse(action));
+                            clientId = b.getString(MQTTservice.CLIENT_ID);
+                            topicTitle = b.getString(MQTTservice.TOPIC);
+                            topic = new Topic();
+                            topic.setTitle(topicTitle);
+
+                            topicPos = topics.indexOf(topic);
+                            topicInList = topics.get(topicPos);
+
+                            if (!topicInList.isSubscribed()) {
+                                return; // Topic is already unsubscribed on Server
+                            }
+
+                            // Update topic on service
+                            webServices.sendUnSubscribe(clientId, topicTitle, new WebServiceResponse(action));
+
+                            // Update topics list
+                            topic.setSubscribed(false);
+                            topics.set(topics.indexOf(topic), topic);
                         }
                         break;
-                    case MQTTservice.PUBLISH:  action = "Publish";  break;
-                    case MQTTservice.REGISTER: action = "Register"; break;
+                    case MQTTservice.PUBLISH:
+                        action = "Publish";
+                        break;
+                    case MQTTservice.REGISTER:
+                        action = "Register";
+                        if (result) {
+                            // Resubscribe topics subscribed
+                            (new SubscribeSilent()).execute();
+                        }
+                        break;
+                    case MQTTservice.SUBSCRIBE_LIST:
+                        if (result) {
+                            List<String> subscribedTopics = b.getStringArrayList(MQTTservice.TOPICS_SUBSCRIBED);
+                            if (subscribedTopics != null) {
+                                StringBuilder strTopics = new StringBuilder();
+                                Iterator i = subscribedTopics.iterator();
+                                for (;;) {
+                                    strTopics.append(i.next());
+                                    if (!i.hasNext()) break;
+                                    strTopics.append(", ");
+                                }
+                                Log.i(MQTTservice.TOPICS_SUBSCRIBED,
+                                        "Topics " + strTopics.toString() + " resubscribed with success !!!");
+                            }
+                        } else {
+                            Log.e(MQTTservice.TOPICS_SUBSCRIBED,
+                                    "An error occurs when tried resubscribe topics subscribed on Server !!!");
+                        }
+                        return;
                     default:
                         super.handleMessage(msg);
                         return;
@@ -360,11 +422,7 @@ public class MainActivity extends AppCompatActivity implements
 
         // 2. Execute the request
         final WebServices webServices = MQTTClientApp.getWebServices();
-
-        String deviceMacAddress = DeviceUtil.getMacAddress();
-        String clientId = deviceMacAddress.replace(":", "");
-
-        webServices.getTopics(clientId, new GetTopicsResponse());
+        webServices.getTopics(DeviceUtil.getClientId(), new GetTopicsResponse());
     }
 
     /**
@@ -394,6 +452,39 @@ public class MainActivity extends AppCompatActivity implements
             if (topics.isEmpty()) {
                 mEmptyView.setVisibility(View.VISIBLE);
             }
+        }
+
+    }
+
+    /**
+     * Resubscribe Topics subscribed on Server.
+     */
+    class SubscribeSilent extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            ArrayList<String> subscribedTopics = new ArrayList<>();
+
+            for (Topic topic : topics) {
+                if (topic.isSubscribed()) {
+                    subscribedTopics.add(topic.getTitle());
+                }
+            }
+
+            if (!subscribedTopics.isEmpty()) {
+                Bundle data = new Bundle();
+                data.putStringArrayList(MQTTservice.TOPICS_LIST, subscribedTopics);
+                Message msg = Message.obtain(null, MQTTservice.SUBSCRIBE_LIST);
+                msg.setData(data);
+                msg.replyTo = serviceHandler;
+                try {
+                    service.send(msg);
+                } catch (RemoteException e) {
+                    Log.e("MQTTSample", e.getMessage());
+                }
+            }
+
+            return null;
         }
 
     }

@@ -43,7 +43,7 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
                 .inflate(R.layout.topic_list_item, parent, false);
         // set the view's size, margins, paddings and layout parameters
         // ...
-        return new ViewHolder(v);
+        return new ViewHolder(v, callbacks);
     }
 
     @Override
@@ -51,23 +51,7 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
 
-        // Gets the Topics of position
-        final Topic topic = topics.get(position);
-
-        //holder.itemThumb.setImageResource(thumb);
-        holder.topicChoose.setChecked(topic.isSubscribed());
-        holder.topicTitle.setText(topic.getTitle());
-
-        holder.topicChoose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    callbacks.onTopicTurnedOn(topic);
-                } else {
-                    callbacks.onTopicTurnedOff(topic);
-                }
-            }
-        });
+        holder.setItem(topics.get(position));
     }
 
     @Override
@@ -87,22 +71,45 @@ public class TopicsAdapter extends RecyclerView.Adapter<TopicsAdapter.ViewHolder
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder implements
+            CompoundButton.OnCheckedChangeListener {
 
-        // public ImageView topicThumb;
-        public SwitchCompat topicChoose;
-        public TextView topicTitle;
+        // private ImageView topicThumb;
+        private SwitchCompat topicChoose;
+        private TextView topicTitle;
+
+        private Topic topic;
+        private Callbacks callbacks;
 
         /**
          * Constructor.
          * @param itemView the View to inflate.
          */
-        public ViewHolder(View itemView) {
+        public ViewHolder(View itemView, Callbacks callbacks) {
             super(itemView);
-            //itemThumb = (ImageView) view.findViewById(R.id.item_thumb);
-            topicChoose = (SwitchCompat) itemView.findViewById(R.id.topic_choose);
+            //topicThumb = (ImageView) itemView.findViewById(R.id.topic_thumb);
             topicTitle = (TextView) itemView.findViewById(R.id.topic_title);
+            topicChoose = (SwitchCompat) itemView.findViewById(R.id.topic_choose);
+            topicChoose.setOnCheckedChangeListener(this);
+            this.callbacks = callbacks;
         }
+
+        public void setItem(Topic topic) {
+            this.topic = topic;
+
+            topicTitle.setText(topic.getTitle());
+            topicChoose.setChecked(topic.isSubscribed());
+        }
+
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            if (isChecked) {
+                callbacks.onTopicTurnedOn(topic);
+            } else {
+                callbacks.onTopicTurnedOff(topic);
+            }
+        }
+
     }
 
     /**

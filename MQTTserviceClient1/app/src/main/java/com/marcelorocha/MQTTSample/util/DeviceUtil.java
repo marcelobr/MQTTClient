@@ -22,4 +22,21 @@ public class DeviceUtil {
         return wInfo.getMacAddress();
     }
 
+    /**
+     * Get the Client Id to use on Service.
+     * @return the Client Id.
+     */
+    public static String getClientId() {
+        // Set a default dummy value...
+        String result = "00:11:22:33:44";
+
+        // Generate the client id based on Device mac address.
+        String deviceMacAddress = DeviceUtil.getMacAddress();
+        if (deviceMacAddress != null && !deviceMacAddress.isEmpty()) {
+            result = deviceMacAddress.replace(":", "");
+        }
+
+        return result;
+    }
+
 }

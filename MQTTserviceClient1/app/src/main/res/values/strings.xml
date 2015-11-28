@@ -9,12 +9,15 @@
     <string name="action_cancel">Cancel</string>
 
     <string name="topics_title">Topics</string>
-    <string name="loading_message">Loading Topics&#8230;</string>
-    <string name="empty_message">There is no Topics</string>
+    <string name="topics_loading_message">Loading Topics&#8230;</string>
+    <string name="topics_empty_message">There is no Topics</string>
 
     <string name="message">Message</string>
     <string name="no_message">Please, inform a message !!!</string>
     <string name="no_topic_selected">No Topics selected !!!</string>
+
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_empty_message">There is no Notifications to show</string>
 
     <string name="error_network">No connection found</string>
     <string name="error_no_response">Server return with no response</string>

@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.marcelorocha.MQTTSample.BuildConfig;
 import com.marcelorocha.MQTTSample.R;
+import com.marcelorocha.MQTTSample.data.NotificationStorage;
 import com.marcelorocha.MQTTSample.util.DeviceUtil;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -26,8 +27,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MQTTservice extends Service {
 
@@ -90,6 +91,7 @@ public class MQTTservice extends Service {
 	 public static final int SUBSCRIBE = 1;
 	 public static final int PUBLISH = 2;
      public static final int UNSUBSCRIBE = -1;
+     public static final int SUBSCRIBE_LIST = 10;
 
 	 /*
 	  * Fixed strings for the supported messages.
@@ -98,9 +100,11 @@ public class MQTTservice extends Service {
 	 public static final String MESSAGE = "message";
 	 public static final String STATUS = "status";
 	 public static final String CLASSNAME = "classname";
-	 public static final String INTENTNAME = "intentname";
-     public static final String CLIENTID = "clientid";
-	 
+	 public static final String INTENT_NAME = "intentname";
+     public static final String CLIENT_ID = "client_id";
+     public static final String TOPICS_LIST = "topics_list";
+     public static final String TOPICS_SUBSCRIBED = "topics_subscribed";
+
 	 /*
 	  * This class handles messages sent to the service by
 	  * bound clients.
@@ -112,6 +116,7 @@ public class MQTTservice extends Service {
 
         	 switch (msg.what) {
                  case SUBSCRIBE:
+                 case SUBSCRIBE_LIST:
                  case UNSUBSCRIBE:
                  case PUBLISH:
                         /*
@@ -133,7 +138,7 @@ public class MQTTservice extends Service {
                              connection.setPushCallback((Class<?>) target);
                              status = true;
                          }
-                         CharSequence cs = b.getCharSequence(INTENTNAME);
+                         CharSequence cs = b.getCharSequence(INTENT_NAME);
                          if (cs != null) {
                              String name = cs.toString().trim();
                              if (name.isEmpty() == false) {
@@ -147,14 +152,10 @@ public class MQTTservice extends Service {
                          }
 
                          // Subscribe the own device Topic
-                         String deviceMacAddress = DeviceUtil.getMacAddress();
-                         String clientId = deviceMacAddress.replace(":", "");
-
                          Bundle data = new Bundle();
-                         data.putCharSequence(MQTTservice.TOPIC, clientId);
+                         data.putCharSequence(MQTTservice.TOPIC, DeviceUtil.getClientId());
                          Message msgToSend = Message.obtain(null, MQTTservice.SUBSCRIBE);
                          msgToSend.setData(data);
-
                          connection.makeRequest(msgToSend);
                      }
                      ReplytoClient(msg.replyTo, msg.what, status);
@@ -232,9 +233,9 @@ public class MQTTservice extends Service {
 
 		private class MsgHandler extends Handler implements MqttCallback {
 
-//			private final String HOST = "iot.eclipse.org";
-//		    private final int PORT = 1883;
-			
+			//private final String HOST = "iot.eclipse.org";
+		    //private final int PORT = 1883;
+
             private final String HOST = BuildConfig.HOST;
             private final int PORT = BuildConfig.PORT;
             private final String uri = "tcp://" + HOST + ":" + PORT;
@@ -243,7 +244,7 @@ public class MQTTservice extends Service {
             private int timeout = MINTIMEOUT;
             private MqttClient client = null;
             private MqttConnectOptions options = new MqttConnectOptions();
-            private Vector<String> topics = new Vector<String>();
+            //private Vector<String> topics = new Vector<String>();
             private String clientId = null;
 
 			MsgHandler() {
@@ -251,9 +252,7 @@ public class MQTTservice extends Service {
 				options.setCleanSession(false);
 			    try {
 					//client = new MqttClient(uri, MqttClient.generateClientId(), null);
-                    String deviceMacAddress = DeviceUtil.getMacAddress();
-                    clientId = deviceMacAddress.replace(":", "");
-
+                    clientId = DeviceUtil.getClientId();
 					client = new MqttClient(uri, clientId, null);
 					client.setCallback(this);
 				} catch (MqttException e1) {
@@ -300,13 +299,13 @@ public class MQTTservice extends Service {
                                 return;
                             }
 
-                            /*
-                             * Re-subscribe to previously subscribed topics
-                             */
-                            Iterator<String> i = topics.iterator();
-                            while (i.hasNext()) {
-                                subscribe(i.next());
-                            }
+                            ///*
+                            // * Re-subscribe to previously subscribed topics
+                            // */
+                            //Iterator<String> i = topics.iterator();
+                            //while (i.hasNext()) {
+                            //    subscribe(i.next());
+                            //}
                         }
                         break;
                     }
@@ -326,19 +325,45 @@ public class MQTTservice extends Service {
                                 topic = cs.toString().trim();
                                 if (topic.isEmpty() == false) {
                                     status = subscribe(topic);
-                                    /*
-                                     * Save this topic for re-subscription if needed.
-                                     */
-                                    if (status)
-                                    {
-                                        topics.add(topic);
-                                    }
+                                    ///*
+                                    // * Save this topic for re-subscription if needed.
+                                    // */
+                                    //if (status)
+                                    //{
+                                    //    topics.add(topic);
+                                    //}
                                 }
                             }
                         }
                         Bundle dataToSend = new Bundle();
-                        dataToSend.putString(CLIENTID, clientId);
+                        dataToSend.putString(CLIENT_ID, clientId);
                         dataToSend.putString(TOPIC, topic);
+                        ReplytoClient(msg.replyTo, msg.what, status, dataToSend);
+                        break;
+                    }
+                    case SUBSCRIBE_LIST:
+                    {
+                        Bundle b = msg.getData();
+                        ArrayList<String> subscribedTopics = new ArrayList<>();
+                        int topicsSize = 0;
+                        if (b != null) {
+                            List<String> topics = b.getStringArrayList(TOPICS_LIST);
+                            if (topics != null) {
+                                topicsSize = topics.size();
+                                if (topics.isEmpty() == false) {
+                                    for (String topic : topics) {
+                                        boolean result = subscribe(topic);
+                                        if (result) {
+                                            subscribedTopics.add(topic);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        boolean status = subscribedTopics.size() == topicsSize;
+                        Bundle dataToSend = new Bundle();
+                        dataToSend.putString(CLIENT_ID, clientId);
+                        dataToSend.putStringArrayList(TOPICS_SUBSCRIBED, subscribedTopics);
                         ReplytoClient(msg.replyTo, msg.what, status, dataToSend);
                         break;
                     }
@@ -353,18 +378,18 @@ public class MQTTservice extends Service {
                                 topic = cs.toString().trim();
                                 if (topic.isEmpty() == false) {
                                     status = unsubscribe(topic);
-                                    /*
-                                     * Save this topic for re-subscription if needed.
-                                     */
-                                    if (status)
-                                    {
-                                        topics.remove(topic);
-                                    }
+                                    ///*
+                                    // * Save this topic for re-subscription if needed.
+                                    // */
+                                    //if (status)
+                                    //{
+                                    //    topics.remove(topic);
+                                    //}
                                 }
                             }
                         }
                         Bundle dataToSend = new Bundle();
-                        dataToSend.putString(CLIENTID, clientId);
+                        dataToSend.putString(CLIENT_ID, clientId);
                         dataToSend.putString(TOPIC, topic);
                         ReplytoClient(msg.replyTo, msg.what, status, dataToSend);
                         break;
@@ -461,17 +486,23 @@ public class MQTTservice extends Service {
 					//build the pending intent that will start the appropriate activity
 					pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 				}
-					
+
+                // Get the message
+                String strMessage = message.toString();
+
 				//build the notification
 				Builder notificationCompat = new Builder(context);
 				notificationCompat.setAutoCancel(true)  
 				        .setContentIntent(pendingIntent)
-				        .setContentText( message.toString())
+				        .setContentText(strMessage)
 				        .setSmallIcon(R.drawable.ic_launcher);
 
 				Notification notification = notificationCompat.build();		   
 				NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 				nm.notify(mid++, notification);
+
+                // Store the Notification on storage
+                NotificationStorage.saveNotification(strMessage);
 			}
 
 		}

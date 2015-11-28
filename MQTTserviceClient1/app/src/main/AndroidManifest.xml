@@ -15,11 +15,16 @@
 
         <activity
             android:name=".ui.MainActivity"
-            android:label="@string/topics_title" >
+            android:label="@string/topics_title">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.NotificationsActivity"
+            android:label="@string/notifications_title">
         </activity>
 
         <!-- Mqtt Service -->
