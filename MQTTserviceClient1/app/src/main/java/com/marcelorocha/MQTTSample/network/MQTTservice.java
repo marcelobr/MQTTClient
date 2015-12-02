@@ -1,7 +1,6 @@
 package com.marcelorocha.MQTTSample.network;
 
 import android.app.Notification;
-import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -14,6 +13,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
 import com.marcelorocha.MQTTSample.BuildConfig;
@@ -490,21 +490,21 @@ public class MQTTservice extends Service {
                                 .addNextIntentWithParentStack(intent)
                                 .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
-					//build the pending intent that will start the appropriate activity
+					// Build the pending intent that will start the appropriate activity
 					//pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 				}
 
                 // Get the message
                 String strMessage = message.toString();
 
-				//build the notification
-				Builder notificationCompat = new Builder(context);
-				notificationCompat.setAutoCancel(true)  
-				        .setContentIntent(pendingIntent)
+				// Build the notification
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+                builder.setAutoCancel(true)
+                        .setContentIntent(pendingIntent)
 				        .setContentText(strMessage)
 				        .setSmallIcon(R.drawable.ic_launcher);
 
-				Notification notification = notificationCompat.build();		   
+				Notification notification = builder.build();
 				NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 				nm.notify(mid++, notification);
 
