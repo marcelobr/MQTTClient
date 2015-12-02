@@ -7,6 +7,8 @@ import android.app.Service;
 import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -496,11 +498,15 @@ public class MQTTservice extends Service {
                 // Get the message
                 String strMessage = message.toString();
 
+                // Define sound URI to play on notification
+                Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
 				// Build the notification
                 NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
                 builder.setAutoCancel(true)
                         .setContentIntent(pendingIntent)
-				        .setContentText(strMessage)
+                        .setContentText(strMessage)
+                        .setSound(soundUri) // This sets the sound to play
 				        .setSmallIcon(R.drawable.ic_launcher);
 
 				Notification notification = builder.build();
