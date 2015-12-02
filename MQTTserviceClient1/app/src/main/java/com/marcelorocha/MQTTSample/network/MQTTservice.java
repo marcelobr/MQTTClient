@@ -474,7 +474,6 @@ public class MQTTservice extends Service {
 					intent.putExtra(MESSAGE, message.toString());
 					sendBroadcast(intent);
 				}
-				
 
 				Context context = getBaseContext();
 				PendingIntent pendingIntent = null;
