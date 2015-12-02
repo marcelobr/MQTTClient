@@ -1,14 +1,20 @@
 package com.marcelorocha.MQTTSample.ui;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.marcelorocha.MQTTSample.R;
+import com.marcelorocha.MQTTSample.data.NotificationStorage;
 import com.marcelorocha.MQTTSample.model.Notification;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -16,10 +22,22 @@ import java.util.List;
  */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
 
+    private DateFormat dateFormat;
+    private DateFormat timeFormat;
+
     /**
      * The Notifications on Adapter.
      */
     private List<Notification> notifications;
+
+    /**
+     * Class Constructor.
+     */
+    public NotificationsAdapter(Context context) {
+        // Get Date and Time format of System preferences.
+        this.dateFormat = android.text.format.DateFormat.getDateFormat(context);
+        this.timeFormat = android.text.format.DateFormat.getTimeFormat(context);
+    }
 
     @Override
     public NotificationsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -39,7 +57,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         // Gets the Topics of position
         final Notification notification = notifications.get(position);
 
+        String notificationDateTime = notification.getDateTime();
+
+        try {
+            Date date = NotificationStorage.getDateFormat().parse(notificationDateTime);
+            notificationDateTime = dateFormat.format(date) + " " + timeFormat.format(date);
+        } catch (ParseException e) {
+            Log.e(NotificationsAdapter.class.getSimpleName(),
+                    "Can't format notification dateTime: " + notificationDateTime);
+        }
+
         //holder.notificationThumb.setImageResource(thumb);
+        holder.notificationDateTime.setText(notificationDateTime);
         holder.notificationMessage.setText(notification.getMessage());
     }
 
@@ -64,6 +93,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
         // public ImageView notificationThumb;
         public TextView notificationMessage;
+        public TextView notificationDateTime;
 
         /**
          * Constructor.
@@ -72,6 +102,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         public ViewHolder(View itemView) {
             super(itemView);
             //notificationThumb = (ImageView) itemView.findViewById(R.id.notification_thumb);
+            notificationDateTime = (TextView) itemView.findViewById(R.id.notification_datetime);
             notificationMessage = (TextView) itemView.findViewById(R.id.notification_message);
         }
     }

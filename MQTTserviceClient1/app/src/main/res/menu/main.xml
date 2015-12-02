@@ -4,9 +4,17 @@
     tools:context="com.marcelorocha.foobar.MainActivity" >
 
     <item
+        android:id="@+id/action_notification"
+        android:orderInCategory="100"
+        android:title="@string/action_notifications"
+        android:icon="@drawable/ic_message_24dp"
+        app:showAsAction="always"/>
+
+    <item
         android:id="@+id/action_publish"
         android:orderInCategory="100"
         android:title="@string/action_publish"
+        android:icon="@drawable/ic_send_24dp"
         app:showAsAction="always"/>
 
 </menu>

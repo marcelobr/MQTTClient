@@ -11,6 +11,7 @@ import com.marcelorocha.MQTTSample.data.NotificationStorage;
 import com.marcelorocha.MQTTSample.model.Notification;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class NotificationsActivity extends AppCompatActivity {
@@ -48,7 +49,7 @@ public class NotificationsActivity extends AppCompatActivity {
         // Use a linear layout manager
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        mAdapter = new NotificationsAdapter();
+        mAdapter = new NotificationsAdapter(this);
 
         // Configure a Adapter observer to be notified about data changes
         mAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
@@ -75,7 +76,16 @@ public class NotificationsActivity extends AppCompatActivity {
      */
     private void loadNotifications() {
         List<Notification> notifications = NotificationStorage.getAllNotifications();
-        Collections.sort(notifications);
+
+        // Reorder the notifications by the data time of their occurrences...
+        Collections.sort(notifications, new Comparator<Notification>() {
+            @Override
+            public int compare(Notification a, Notification b) {
+                return b.getDateTime().compareTo(a.getDateTime());
+            }
+        });
+
+        // Load notifications on screen
         mAdapter.loadNotifications(notifications);
     }
 

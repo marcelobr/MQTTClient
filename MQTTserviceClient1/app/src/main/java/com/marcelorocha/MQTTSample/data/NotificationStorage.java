@@ -11,6 +11,7 @@ import com.marcelorocha.MQTTSample.model.Notification;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -97,7 +98,15 @@ public class NotificationStorage {
      * @return The current system date on format "yyyy-MM-ddTHH:mm:ss".
      */
     private static String getCurrentTimeStamp() {
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+        return getDateFormat().format(new Date());
+    }
+
+    /**
+     * Get the {@link DateFormat} used on Storage.
+     * @return The {@link DateFormat} of Storage.
+     */
+    public static DateFormat getDateFormat() {
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
     }
 
     /**

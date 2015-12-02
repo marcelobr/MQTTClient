@@ -3,7 +3,7 @@ package com.marcelorocha.MQTTSample.model;
 /**
  * Model class to represent a Topic.
  */
-public class Notification implements Comparable<Notification> {
+public class Notification {
 
     private String dateTime;
     private String message;
@@ -19,11 +19,6 @@ public class Notification implements Comparable<Notification> {
 
     public String getMessage() {
         return message;
-    }
-
-    @Override
-    public int compareTo(Notification o) {
-        return this.getDateTime().compareTo(o.getDateTime());
     }
 
 }

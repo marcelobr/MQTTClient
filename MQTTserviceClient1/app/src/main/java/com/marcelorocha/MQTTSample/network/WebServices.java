@@ -24,7 +24,7 @@ public interface WebServices {
                        Callback<Void> callback);
 
     @GET("/SendUnsubscribe")
-    void sendUnSubscribe(@Query("macaddress") String macaddress,
+    void sendUnsubscribe(@Query("macaddress") String macaddress,
                          @Query("topic") String topic,
                          Callback<Void> callback);
 
