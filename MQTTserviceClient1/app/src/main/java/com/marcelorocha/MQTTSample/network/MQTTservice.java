@@ -5,6 +5,7 @@ import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -479,12 +480,18 @@ public class MQTTservice extends Service {
 				PendingIntent pendingIntent = null;
 					
 				if (launchActivity != null) {
-					Intent intent = new Intent(context, launchActivity);
-					intent.setAction(Intent.ACTION_MAIN);
-					intent.addCategory(Intent.CATEGORY_LAUNCHER);
-					
+                    // Intent for the activity to open when user selects the notification
+                    Intent intent = new Intent(context, launchActivity);
+
+                    // Use TaskStackBuilder to build the back stack and get the PendingIntent
+                    pendingIntent = TaskStackBuilder.create(context)
+                                // add all of launchActivity's parents to the stack,
+                                // followed by launchActivity itself
+                                .addNextIntentWithParentStack(intent)
+                                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
 					//build the pending intent that will start the appropriate activity
-					pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+					//pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 				}
 
                 // Get the message

@@ -71,8 +71,8 @@ public class NotificationStorage {
     }
 
     /**
-     *
-     * @param message The message of notification
+     * Save a notification on Storage.
+     * @param message The message of notification.
      */
     public static void saveNotification(String message) {
         // Get the App context
@@ -85,11 +85,11 @@ public class NotificationStorage {
 
         // Generate the persistence key for the Notification
         final int total = notifications.getAll().size();
-        String notifKey = "notification" + (total % MAX);
+        String key = "notification" + (total % MAX);
 
         // Save the Notification
         SharedPreferences.Editor editor = notifications.edit();
-        editor.putString(notifKey, toJSON(notification));
+        editor.putString(key, toJSON(notification));
         editor.apply();
     }
 
@@ -111,7 +111,7 @@ public class NotificationStorage {
 
     /**
      * Transform a {@link Notification} to JSON String.
-     * @param notification The {@link Notification} instance to transform
+     * @param notification The {@link Notification} instance to transform.
      * @return A JSON String from {@link Notification} instance object.
      */
     private static String toJSON(Notification notification) {
