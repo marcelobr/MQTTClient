@@ -303,6 +303,11 @@ public class MainActivity extends AppCompatActivity implements
                     case MQTTservice.SUBSCRIBE:
                         action = "Subscribe";
                         onSubscribe(result, b);
+                        // Checking the client id to avoid unnecessary feedback
+                        String clientId = b.getString(MQTTservice.CLIENT_ID);
+                        if (DeviceUtil.getClientId().equals(clientId)) {
+                            return;
+                        }
                         break;
                     case MQTTservice.UNSUBSCRIBE:
                         action = "Unsubscribe";
