@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements
 		public void onServiceConnected(ComponentName arg0, IBinder binder) {
 			service = new Messenger(binder);
 			Bundle data = new Bundle();
-			//data.putSerializable(MQTTservice.CLASSNAME, MainActivity.class);
+			data.putSerializable(MQTTservice.CLASSNAME, NotificationsActivity.class);
 			data.putCharSequence(MQTTservice.INTENT_NAME, PUSH_RECEIVED_ACTION);
 			Message msg = Message.obtain(null, MQTTservice.REGISTER);
 			msg.setData(data);

@@ -1,6 +1,7 @@
 package com.marcelorocha.MQTTSample.ui;
 
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -37,6 +38,12 @@ public class NotificationsActivity extends AppCompatActivity {
      * Initialize and setup the views of Activity.
      */
     private void initViews() {
+        // Setup App's navigation flow
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         mEmptyView = findViewById(R.id.empty_message);
 
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.notifications_list);
