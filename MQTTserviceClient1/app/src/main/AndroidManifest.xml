@@ -25,7 +25,8 @@
         <activity
             android:name=".ui.NotificationsActivity"
             android:label="@string/notifications_title"
-            android:parentActivityName=".ui.MainActivity">
+            android:parentActivityName=".ui.MainActivity"
+            android:exported="true">
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

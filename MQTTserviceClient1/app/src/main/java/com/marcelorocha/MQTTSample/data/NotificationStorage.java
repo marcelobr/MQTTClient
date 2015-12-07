@@ -3,6 +3,7 @@ package com.marcelorocha.MQTTSample.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.marcelorocha.MQTTSample.MQTTClientApp;
@@ -45,29 +46,28 @@ public class NotificationStorage {
     @SuppressWarnings("unchecked")
     @NonNull
     public static List<Notification> getAllNotifications() {
-        ArrayList<Notification> result = new ArrayList<>();
+        ArrayList<Notification> notifications = new ArrayList<>();
 
         // Get the App context
         Context context = MQTTClientApp.getContext();
 
-        SharedPreferences notifications = context.getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences storage = context.getSharedPreferences(PREFS_NAME, 0);
 
-        Map<String, String> entries = (Map<String, String>) notifications.getAll();
+        Map<String, String> entries = (Map<String, String>) storage.getAll();
 
-        for (String notification : entries.values()) {
-            try {
-                JSONObject jsonObject = new JSONObject(notification);
-                String dateTime = jsonObject.getString(JSON_DATETIME_KEY);
-                String message = jsonObject.getString(JSON_MESSAGE_KEY);
+        for (String jsonString : entries.values()) {
+            Notification notification = fromJSON(jsonString);
 
-                // Add to result list
-                result.add(new Notification(dateTime, message));
-            } catch (JSONException e) {
-                Log.e(NotificationStorage.class.getSimpleName(), e.getMessage());
+            if (notification != null) {
+                // Add to notifications list
+                notifications.add(notification);
+            } else {
+                Log.e(NotificationStorage.class.getSimpleName(),
+                        "Could not get Notification from: " + jsonString);
             }
         }
 
-        return result;
+        return notifications;
     }
 
     /**
@@ -81,15 +81,30 @@ public class NotificationStorage {
         // Create a Notification to save
         Notification notification = new Notification(getCurrentTimeStamp(), message);
 
-        SharedPreferences notifications = context.getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences storage = context.getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = storage.edit();
 
         // Generate the persistence key for the Notification
-        final int total = notifications.getAll().size();
-        String key = "notification" + (total % MAX);
+        Map<String, ?> notifications = storage.getAll();
+        String strPart = "notification";
+        int intPart = 0; int intPartTmp = 0;
+        // Try to get the last key generated on Storage
+        for (String key : notifications.keySet()) {
+            intPartTmp = Integer.parseInt(key.replace(strPart, ""));
+            intPart = (intPartTmp > intPart) ? intPartTmp : intPart;
+        }
 
-        // Save the Notification
-        SharedPreferences.Editor editor = notifications.edit();
-        editor.putString(key, toJSON(notification));
+        // Set the Notification to save on Storage
+        intPart = intPart + 1;
+        editor.putString((strPart + intPart), toJSON(notification));
+
+        // Remove the last notification to keep only the MAX number on Storage
+        intPart = intPart - MAX;
+        if (intPart > 0) {
+            editor.remove((strPart + intPart));
+        }
+
+        // Apply the modifications on Storage
         editor.apply();
     }
 
@@ -107,6 +122,24 @@ public class NotificationStorage {
      */
     public static DateFormat getDateFormat() {
         return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+    }
+
+    /**
+     * Get the {@link Notification} instance from a passed JSON string.
+     * @param jsonString The JSON string to get the {@link Notification}.
+     * @return A {@link Notification} instance.
+     */
+    @Nullable
+    private static Notification fromJSON(String jsonString) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            String dateTime = jsonObject.getString(JSON_DATETIME_KEY);
+            String message = jsonObject.getString(JSON_MESSAGE_KEY);
+            // Add to result list
+            return new Notification(dateTime, message);
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     /**
